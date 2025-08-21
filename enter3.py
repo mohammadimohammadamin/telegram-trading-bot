@@ -3,8 +3,8 @@ import requests
 from tradingview_ta import TA_Handler, Interval
 
 # ====== Telegram Config ======
-TOKEN = '8374305315:AAHakQ4jTQ3_YVt50N2veH_xGSv1TRIEXcA'
-CHAT_ID = '7726161526'
+TOKEN = os.getenv ("BOT_TOKEN")
+CHAT_ID = os.getenv ("CHAT_ID")
 
 def send_msg(text):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
