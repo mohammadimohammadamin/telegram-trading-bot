@@ -1,6 +1,7 @@
 import time
 import requests
 from tradingview_ta import TA_Handler, Interval
+import os 
 
 # ====== Telegram Config ======
 TOKEN = os.getenv ("BOT_TOKEN")
