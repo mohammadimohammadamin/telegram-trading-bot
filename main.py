@@ -79,5 +79,6 @@ while True:
 
     except Exception as e:
         print("Error:", e)
+        time.sleep(5)
 
     time.sleep(900)  # هر 15 دقیقه
