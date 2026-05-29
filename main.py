@@ -18,7 +18,7 @@ def send_msg(text):
 symbol = "BTCUSDT"   # اینجا ارز رو عوض کن
 tf_input = "1h"
 
-interval = Interval.INTERVAL_15_minutes
+interval = Interval.INTERVAL_1_HOUR
 
 handler = TA_Handler(
     symbol=symbol,
@@ -61,7 +61,7 @@ while True:
         # ====== شرط‌ها ======
         if rsi >= 60 and cross_up:
             signal = "BUY"
-        elif rsi <= 40 and cross_down:
+        elif rsi < 40 and cross_down:
             signal = "SELL"
         else:
             signal = "NONE"
