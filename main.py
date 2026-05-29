@@ -18,7 +18,7 @@ def send_msg(text):
 symbol = "BTCUSDT"   # اینجا ارز رو عوض کن
 tf_input = "1h"
 
-interval = Interval.INTERVAL_15_MINUTES
+interval = Interval.INTERVAL_1_hour
 
 handler = TA_Handler(
     symbol=symbol,
