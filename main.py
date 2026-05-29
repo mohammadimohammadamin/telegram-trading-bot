@@ -61,7 +61,7 @@ while True:
         # ====== شرط‌ها ======
         if rsi >= 60 and cross_up:
             signal = "BUY"
-        elif rsi < 40 and cross_down:
+        elif rsi <= 40 and cross_down:
             signal = "SELL"
         else:
             signal = "NONE"
