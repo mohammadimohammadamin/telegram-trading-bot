@@ -1,6 +1,6 @@
 import requests
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from tradingview_ta import TA_Handler, Interval
 
 # ====== Telegram Config ======
@@ -14,21 +14,11 @@ def send_msg(text):
     except Exception as e:
         print("Telegram Error:", e)
 
-# ====== تنظیمات ======
-symbol = "BTCUSDT"
+# ====== تنظیمات ثابت ======
+symbol = "BTCUSDT"   # اینجا ارز رو عوض کن
+tf_input = "1h"
 
-# 👇 اینو فقط عوض کن
-TIMEFRAME = "1h"
-
-# ====== مپ تایم‌فریم ======
-tf_map = {
-    "15m": (Interval.INTERVAL_15_MINUTES, 15),
-    "30m": (Interval.INTERVAL_30_MINUTES, 30),
-    "1h": (Interval.INTERVAL_1_HOUR, 60),
-    "4h": (Interval.INTERVAL_4_HOURS, 240),
-}
-
-interval, minutes = tf_map[TIMEFRAME]
+interval = Interval.INTERVAL_15_MINUTES
 
 handler = TA_Handler(
     symbol=symbol,
@@ -37,43 +27,24 @@ handler = TA_Handler(
     interval=interval
 )
 
-# ====== کنترل ======
+# ====== متغیرهای کنترل ======
 prev_ema20 = None
 prev_ema50 = None
 last_signal = None
 
-# ====== تابع زمان‌بندی ======
-def wait_until_next_run():
-    now = datetime.now()
-
-    current_minute = now.minute
-
-    next_minute = ((current_minute // minutes) + 1) * minutes
-
-    if next_minute >= 60:
-        next_time = now.replace(minute=0, second=5, microsecond=0) + timedelta(hours=1)
-    else:
-        next_time = now.replace(minute=next_minute, second=5, microsecond=0)
-
-    wait_seconds = (next_time - now).total_seconds()
-
-    print(f"⏳ Waiting {int(wait_seconds)} seconds...")
-    time.sleep(wait_seconds)
-
 # ====== شروع ======
-send_msg(f"🚀 Bot started\n{symbol} | TF={TIMEFRAME}")
+send_msg(f"🚀 Bot started\nSymbol={symbol} | TF={tf_input}")
 
 # ====== Loop ======
 while True:
     try:
         analysis = handler.get_analysis()
-        time.sleep(1)
 
         rsi = analysis.indicators.get("RSI")
         ema20 = analysis.indicators.get("EMA20")
         ema50 = analysis.indicators.get("EMA50")
 
-        print(f"DEBUG -> RSI={rsi} EMA20={ema20} EMA50={ema50}")
+        print(f"DEBUG -> RSI={rsi} | EMA20={ema20} | EMA50={ema50}")
 
         cross_up = False
         cross_down = False
@@ -87,26 +58,26 @@ while True:
         prev_ema20 = ema20
         prev_ema50 = ema50
 
-        # ====== شرط ======
-        if rsi < 40 and cross_up:
+        # ====== شرط‌ها ======
+        if rsi >= 58 and cross_up:
             signal = "BUY"
-        elif rsi >= 60 and cross_down:
+        elif rsi <= 42 and cross_down:
             signal = "SELL"
         else:
             signal = "NONE"
 
+        # ====== پیام ======
         if signal == "BUY":
-            message = f"{symbol}\n📈 BUY SIGNAL\nRSI={rsi:.2f}"
+            message = f"{symbol} | {tf_input}\n📈 BUY SIGNAL\nRSI={rsi:.2f}"
         elif signal == "SELL":
-            message = f"{symbol}\n📉 SELL SIGNAL\nRSI={rsi:.2f}"
+            message = f"{symbol} | {tf_input}\n📉 SELL SIGNAL\nRSI={rsi:.2f}"
 
+        # ====== ارسال فقط در صورت سیگنال جدید ======
         if signal != "NONE" and signal != last_signal:
             send_msg(message)
             last_signal = signal
 
     except Exception as e:
-    print("Error:", e)
-    time.sleep(10)
+        print("Error:", e)
 
-    # 👇 این خیلی مهمه
-    wait_until_next_run()
+    time.sleep(900)  # هر 15 دقیقه
