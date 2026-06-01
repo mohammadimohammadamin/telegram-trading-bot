@@ -67,6 +67,7 @@ send_msg(f"🚀 Bot started\n{symbol} | TF={TIMEFRAME}")
 while True:
     try:
         analysis = handler.get_analysis()
+        time.sleep(1)
 
         rsi = analysis.indicators.get("RSI")
         ema20 = analysis.indicators.get("EMA20")
@@ -104,8 +105,8 @@ while True:
             last_signal = signal
 
     except Exception as e:
-        print("Error:", e)
-        time.sleep(5)
+    print("Error:", e)
+    time.sleep(10)
 
     # 👇 این خیلی مهمه
     wait_until_next_run()
