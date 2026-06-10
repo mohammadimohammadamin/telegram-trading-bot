@@ -3,9 +3,9 @@ import time
 from datetime import datetime
 from tradingview_ta import TA_Handler, Interval
 
-# ====== Telegram Config ======
-TOKEN = '8374305315:AAHakQ4jTQ3_YVt50N2veH_xGSv1TRIEXcA'
-CHAT_ID = '7726161526'
+# ====== Telegram Config (امن) ======
+TOKEN = ("8374305315:AAFtQ-GZp_Uq13sSrb9vE3b3lH90xpGLR2U")
+CHAT_ID = ("7726161526")
 
 def send_msg(text):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
@@ -14,132 +14,83 @@ def send_msg(text):
     except Exception as e:
         print("Telegram Error:", e)
 
-# ====== تنظیمات ثابت ======
-symbol = "BTCUSDT"   # اینجا ارز رو عوض کن
+# ====== تنظیمات ======
+symbols = ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
 tf_input = "1h"
-
 interval = Interval.INTERVAL_1_HOUR
 
-handler = TA_Handler(
-    symbol=symbol,
-    screener="crypto",
-    exchange="BINANCE",
-    interval=interval
-)
-
-# ====== متغیرهای کنترل ======
-prev_ema20 = None
-prev_ema50 = None
-last_signal = None
+# ====== وضعیت جدا ======
+prev_ema = {}
+last_signal = {}
 
 # ====== شروع ======
-send_msg(f"🚀 Bot started\nSymbol={symbol} | TF={tf_input}")
-
-#------------------------------------------------------------------
-
-symbol2 = "SOLUSDT"   # اینجا ارز رو عوض کن
-
-handler2 = TA_Handler(
-    symbol=symbol2,
-    screener="crypto",
-    exchange="BINANCE",
-    interval=interval
-)
-
-# ====== متغیرهای کنترل ======
-prev2_ema20 = None
-prev2_ema50 = None
-last2_signal = None
-
-# ====== شروع ======
-send_msg(f"🚀 Bot started\nSymbol={symbol2} | TF={tf_input}")
+send_msg(f"🚀 Bot started\nSymbols={symbols} | TF={tf_input}")
 
 # ====== Loop ======
 while True:
     try:
-        analysis = handler.get_analysis()
+        for symbol in symbols:
+            print(f"🔍 Checking {symbol}")
 
-        rsi = analysis.indicators.get("RSI")
-        ema20 = analysis.indicators.get("EMA20")
-        ema50 = analysis.indicators.get("EMA50")
+            try:
+                handler = TA_Handler(
+                    symbol=symbol,
+                    screener="crypto",
+                    exchange="BINANCE",
+                    interval=interval
+                )
 
-        print(f"DEBUG -> RSI={rsi} | EMA20={ema20} | EMA50={ema50}")
+                analysis = handler.get_analysis()
 
-        cross_up = False
-        cross_down = False
+                rsi = analysis.indicators.get("RSI")
+                ema20 = analysis.indicators.get("EMA20")
+                ema50 = analysis.indicators.get("EMA50")
 
-        if prev_ema20 and prev_ema50:
-            if prev_ema20 < prev_ema50 and ema20 > ema50:
-                cross_up = True
-            elif prev_ema20 > prev_ema50 and ema20 < ema50:
-                cross_down = True
+                print(f"DEBUG {symbol} -> RSI={rsi} | EMA20={ema20} | EMA50={ema50}")
 
-        prev_ema20 = ema20
-        prev_ema50 = ema50
+                # ====== مقدار اولیه ======
+                if symbol not in prev_ema:
+                    prev_ema[symbol] = {"ema20": None, "ema50": None}
+                    last_signal[symbol] = None
 
-        # ====== شرط‌ها ======
-        if rsi >= 58 and cross_up:
-            signal = "BUY"
-        elif rsi <= 42 and cross_down:
-            signal = "SELL"
-        else:
-            signal = "NONE"
+                prev20 = prev_ema[symbol]["ema20"]
+                prev50 = prev_ema[symbol]["ema50"]
 
-        # ====== پیام ======
-        if signal == "BUY":
-            message = f"{symbol} | {tf_input}\n📈 BUY SIGNAL\nRSI={rsi:.2f}"
-        elif signal == "SELL":
-            message = f"{symbol} | {tf_input}\n📉 SELL SIGNAL\nRSI={rsi:.2f}"
+                cross_up = False
+                cross_down = False
 
-        # ====== ارسال فقط در صورت سیگنال جدید ======
-        if signal != "NONE" and signal != last_signal:
-            send_msg(message)
-            last_signal = signal
+                if prev20 and prev50:
+                    if prev20 < prev50 and ema20 > ema50:
+                        cross_up = True
+                    elif prev20 > prev50 and ema20 < ema50:
+                        cross_down = True
 
-    except Exception as e:
-        print("Error:", e)
+                prev_ema[symbol]["ema20"] = ema20
+                prev_ema[symbol]["ema50"] = ema50
 
-    try:
-        analysis = handler.get_analysis()
+                # ====== شرط RSI + کراس ======
+                if rsi >= 58 and cross_up:
+                    signal = "BUY"
+                elif rsi <= 42 and cross_down:
+                    signal = "SELL"
+                else:
+                    signal = "NONE"
 
-        rsi2 = analysis.indicators.get("RSI")
-        ema220 = analysis.indicators.get("EMA20")
-        ema250 = analysis.indicators.get("EMA50")
+                # ====== پیام ======
+                if signal == "BUY":
+                    message = f"{symbol} | {tf_input}\n📈 BUY SIGNAL\nRSI={rsi:.2f}"
+                elif signal == "SELL":
+                    message = f"{symbol} | {tf_input}\n📉 SELL SIGNAL\nRSI={rsi:.2f}"
 
-        print(f"DEBUG -> RSI={rsi2} | EMA20={ema220} | EMA50={ema250}")
+                # ====== جلوگیری از اسپم ======
+                if signal != "NONE" and signal != last_signal[symbol]:
+                    send_msg(message)
+                    last_signal[symbol] = signal
 
-        cross2_up = False
-        cross2_down = False
-
-        if prev2_ema20 and prev2_ema50:
-            if prev2_ema20 < prev2_ema50 and ema220 > ema250:
-                cross2_up = True
-            elif prev2_ema20 > prev2_ema50 and ema220 < ema250:
-                cross2_down = True
-
-        prev2_ema20 = ema220
-        prev2_ema50 = ema250
-
-        # ====== شرط‌ها ======
-        if rsi2 >= 58 and cross2_up:
-            signal2 = "BUY"
-        elif rsi2 <= 42 and cross2_down:
-            signal2 = "SELL"
-        else:
-            signal2 = "NONE"
-
-        # ====== پیام ======
-        if signal2 == "BUY":
-            message = f"{symbol2} | {tf_input}\n📈 BUY SIGNAL\nRSI={rsi2:.2f}"
-        elif signal == "SELL":
-            message = f"{symbol2} | {tf_input}\n📉 SELL SIGNAL\nRSI={rsi2:.2f}"
-
-        # ====== ارسال فقط در صورت سیگنال جدید ======
-        if signal2 != "NONE" and signal2 != last_signal2:
-            send_msg(message)
-            last_signal2 = signal2
+            except Exception as e:
+                print(f"❌ Error on {symbol}: {e}")
 
     except Exception as e:
-        print("Error:", e)
+        print("Main Error:", e)
 
-    time.sleep(900)  # هر 15 دقیقه
+    time.sleep(900)
